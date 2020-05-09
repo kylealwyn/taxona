@@ -15,11 +15,7 @@ type SubscriptionFn = (state: any) => any;
 type BasicFn = (...args: any[]) => any;
 interface BasicActions { [key: string]: BasicFn }
 
-export function createTaxona<T>({
-  reducers,
-}: {
-  reducers: T
-}) {
+export function createTaxona<T>(reducers: T) {
   const state: {
     [reducerName: string]: any
   } = {};

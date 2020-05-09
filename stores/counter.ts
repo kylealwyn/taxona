@@ -1,4 +1,4 @@
-import { createReducer } from '../dewey';
+import { createReducer } from '../taxona';
 
 export default createReducer({
   state: {

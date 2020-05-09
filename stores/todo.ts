@@ -1,4 +1,4 @@
-import { createReducer } from '../dewey';
+import { createReducer } from '../taxona';
 
 export default createReducer({
   state: {
@@ -9,7 +9,7 @@ export default createReducer({
       if (!newTodo) {
         return;
       }
-      
+
       return new Promise(resolve => {
         setTimeout(() => {
           state.todos = [...state.todos, newTodo]
