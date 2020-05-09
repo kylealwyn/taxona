@@ -10,7 +10,8 @@ export const logger = (message: string, color?: string, object = {}) => {
 };
 
 export function logStateChange(prevState: any, newState: any, groupName:string) {
-  const diff = detailedDiff(prevState, newState);
+  // @ts-ignore
+  const diff: { added: any, updated: any; deleted : any } = detailedDiff(prevState, newState);
 
   console.groupCollapsed(groupName);
   if (Object.keys(diff.added).length) {

@@ -1,20 +1,15 @@
 import { createReducer } from '../dewey';
 
-interface TodoState {
-  todos: string[];
-}
-
-type TodoActions = {
-  add(todo: string): any;
-  delete(index: number): any;
-}
-
-export const reducer = createReducer<TodoState, TodoActions>({
+export default createReducer({
   state: {
-    todos: [],
+    todos: [] as Array<string>,
   },
   actions: {
     add: (state, newTodo: string) => {
+      if (!newTodo) {
+        return;
+      }
+      
       return new Promise(resolve => {
         setTimeout(() => {
           state.todos = [...state.todos, newTodo]

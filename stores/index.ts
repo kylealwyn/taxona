@@ -1,15 +1,13 @@
-import { createStore } from '../dewey';
-import * as counter from './counter';
-import * as todo from './todo';
-
-export * from './counter';
+import { createTaxona } from '../dewey';
+import counter from './counter';
+import todo from './todo';
 
 export const { 
   Provider,
   useTaxona,
-} = createStore({
+} = createTaxona({
   reducers: {
-    counter: counter.reducer,
-    todo: todo.reducer,
+    counter,
+    todo,
   }
 })
