@@ -1,15 +1,15 @@
 import React, { useState } from 'react';
-import { store } from '../stores';
+import { useTaxona } from '../stores';
 
 export default () => {
   const [todoInput, setTodoInput] = useState('');
-  const [todos, addTodo, deleteTodo] = store.use(({ todo }) => [
+  const [todos, addTodo, deleteTodo] = useTaxona(({ todo }) => [
     todo.state.todos,
     todo.actions.add,
     todo.actions.delete,
   ]);
 
-  const onSubmit = e => {
+  const onSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     addTodo(todoInput);
     setTodoInput('');

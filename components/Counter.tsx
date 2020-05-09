@@ -1,12 +1,8 @@
 import React from 'react';
-import { store, CounterActions } from '../stores';
+import { useTaxona } from '../stores';
 
 export default function Counter() {
-  const [count, increment, decrement] = store.use<[
-    number,
-    CounterActions['increment'],
-    CounterActions['decrement']
-  ]>(({ counter }) => [
+  const [count, increment, decrement] = useTaxona(({ counter }) => [
     counter.state.count,
     counter.actions.increment,
     counter.actions.decrement,

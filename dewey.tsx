@@ -3,8 +3,25 @@ import shallowEqual from './shallow-equal';
 import { createDraft, finishDraft } from 'immer';
 import { logger, logStateChange } from './logger';
 
-type Store = null | {
+type Reducer = {
+  actions: {
+    [key: string]: () => void;
+  },
+  state: {
+    [key: string]: any;
+  }
+}
+
+type Store<T> = {
+  getState: () => void; 
+  updateState: (reducerName: string, state: any) => void; 
+  reducers: T;
   subscribe: (fn: Function) => () => void;
+  notify: () => void;
+}
+
+type State<T extends Reducer> = {
+  [K in keyof T]: T[K]['state'];
 }
 
 interface WrapActionParams {
@@ -15,9 +32,6 @@ interface WrapActionParams {
   actionName: string;
   actionFn: any;
 }
-
-
-const Context = createContext<Store>(null);
 
 const wrapAction = ({
   getState,
@@ -46,13 +60,18 @@ const wrapAction = ({
   }
 }
 
+
+type SubscriptionFn = (state: any) => any;
+
 export function createStore<T>({
   reducers,
 }: {
   reducers: T
 }) {
-  const state = {};
-  const subscriptions = {};
+  const state: {
+    [reducerName: string]: any
+  } = {};
+  const subscriptions: Map<number, SubscriptionFn> = new Map();
   let counter = 0;
 
   function getState() {
@@ -64,22 +83,22 @@ export function createStore<T>({
     notify();
   }
 
-  function subscribe(fn: () => any) {
+  function subscribe(fn: SubscriptionFn) {
     let id = ++counter;
-    subscriptions[id] = fn;
+    subscriptions.set(id, fn);
 
     return () => {
-      delete subscriptions[id];
+      subscriptions.delete(id);
     };
   }
 
   function notify() {
-    Object.keys(subscriptions).forEach(id => {
-      let fn = subscriptions[id];
-      typeof fn === 'function' && fn(state);
-    });
+    for (const fn of subscriptions.values()) {
+      fn(state);
+    }
   }
 
+  /** We need to proxy each reducer action */
   Object.keys(reducers).forEach(reducerName => {
     const reducer = reducers[reducerName];
 
@@ -92,66 +111,83 @@ export function createStore<T>({
     updateState(reducerName, reducer.state);
   });
 
-  return {
-    reducers,
+
+  const contextValue = {
     getState,
+    reducers,
     updateState,
     subscribe,
     notify,
-    use<TSelected>(selector: (reducers: T) => TSelected, dependencies = []) {
-      const store = useContext(Context);
-      const select = () => selector(reducers);
-      const [state, setState] = useState(select());
+  }
 
-      // By default, our effect only fires on mount and unmount, meaning it won't see the
-      // changes to state, so we use a mutable ref to track the current value
-      const stateRef = useRef(state);
+  const Context = createContext<Store<T>>(contextValue);
 
-      useEffect(() => {
-        // Helps to avoid running stale listeners after unmount
-        let isUnsubscribed = false;
+  const Provider: React.FC = ({ children }) => {
+    return (
+      <Context.Provider value={contextValue}>
+        {children}
+      </Context.Provider>
+    )
+  };
 
-        const maybeUpdateState = () => {
-          if (isUnsubscribed) {
-            return;
-          }
+  function useTaxona<TSelected>(selector: (reducers: T) => TSelected, dependencies = []) {
+    const store = useContext(Context);
 
-          const nextState = select();
-
-          // Checking referential equality grants perf boost if selector is memoized
-          if (
-            nextState === stateRef.current ||
-            shallowEqual(nextState, stateRef.current)
-          ) {
-            return;
-          }
-
-          stateRef.current = nextState;
-          setState(nextState);
-        };
-
-        const unsubscribe = store.subscribe(maybeUpdateState);
-
-        maybeUpdateState();
-
-        return () => {
-          unsubscribe();
-          isUnsubscribed = true;
-        };
-      }, dependencies);
-
-      return state;
+    if (!store) {
+      throw new Error('Yeah hi, you need to wrap your app in our Provider');
     }
+
+    const select = () => selector(reducers);
+    const [state, setState] = useState(select());
+
+    // By default, our effect only fires on mount and unmount, meaning it won't see the
+    // changes to state, so we use a mutable ref to track the current value
+    const stateRef = useRef(state);
+
+    useEffect(() => {
+      // Helps to avoid running stale listeners after unmount
+      let isUnsubscribed = false;
+
+      const maybeUpdateState = () => {
+        if (isUnsubscribed) {
+          return;
+        }
+
+        const nextState = select();
+
+        // Checking referential equality grants perf boost if selector is memoized
+        if (
+          nextState === stateRef.current ||
+          shallowEqual(nextState, stateRef.current)
+        ) {
+          return;
+        }
+
+        stateRef.current = nextState;
+        setState(nextState);
+      };
+
+      const unsubscribe = store.subscribe(maybeUpdateState);
+
+      maybeUpdateState();
+
+      return () => {
+        unsubscribe();
+        isUnsubscribed = true;
+      };
+    }, dependencies);
+
+    return state;
+  }
+
+  return {
+    Provider,
+    useTaxona,
   }
 }
 
 type BasicFn = (...args: any[]) => any;
 interface BasicActions { [key: string]: BasicFn }
-
-type Action<State extends object, Actions extends BasicActions > = {
-  [P in keyof Actions]: (state: State, ...args: Parameters<Actions[P]>) => any;
-}
-
 export function createReducer<State, Actions extends BasicActions>({
   state,
   actions
@@ -168,14 +204,8 @@ export function createReducer<State, Actions extends BasicActions>({
 } {
   return {
     state,
+
+    // @ts-ignore
     actions
   }
-}
-
-export function Provider({ store, children }) {
-  return (
-    <Context.Provider value={store}>
-      {children}
-    </Context.Provider>
-  )
 }

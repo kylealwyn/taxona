@@ -9,7 +9,7 @@ export const logger = (message: string, color?: string, object = {}) => {
   }
 };
 
-export function logStateChange(prevState, newState, groupName) {
+export function logStateChange(prevState: any, newState: any, groupName:string) {
   const diff = detailedDiff(prevState, newState);
 
   console.groupCollapsed(groupName);

@@ -1,12 +1,11 @@
 import React, { Fragment } from 'react';
 import { render } from 'react-dom';
-import { Provider } from './dewey';
-import { store } from './stores';
+import { Provider } from './stores';
 import Counter from './components/Counter';
 import TodoList from './components/TodoList';
 
 const App = () => (
-  <Provider store={store}>
+  <Provider>
     <Fragment>
       <TodoList />
       <Counter />
@@ -14,4 +13,4 @@ const App = () => (
   </Provider>
 );
 
-render(<App />, window.root);
+render(<App />, document.getElementById('root'));

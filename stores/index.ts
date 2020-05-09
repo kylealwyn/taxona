@@ -4,7 +4,10 @@ import * as todo from './todo';
 
 export * from './counter';
 
-export const store = createStore({
+export const { 
+  Provider,
+  useTaxona,
+} = createStore({
   reducers: {
     counter: counter.reducer,
     todo: todo.reducer,
