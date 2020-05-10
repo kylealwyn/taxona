@@ -17,22 +17,13 @@ interface BasicActions { [key: string]: BasicFn }
 
 export function createTaxona<T>(reducers: T) {
   const state: {
-    [reducerName: string]: any
+    [reducerName: string]: any;
   } = {};
   const subscriptions: Map<number, SubscriptionFn> = new Map();
   let counter = 0;
 
-  function getState() {
-    return state;
-  }
-
-  function updateState(reducerName: string, newState: any) {
-    state[reducerName] = newState;
-    notify();
-  }
-
   function subscribe(fn: SubscriptionFn) {
-    let id = ++counter;
+    const id = ++counter;
     subscriptions.set(id, fn);
 
     return () => {
@@ -44,6 +35,15 @@ export function createTaxona<T>(reducers: T) {
     for (const fn of subscriptions.values()) {
       fn(state);
     }
+  }
+  
+  function getState() {
+    return state;
+  }
+
+  function updateState(reducerName: string, newState: any) {
+    state[reducerName] = newState;
+    notify();
   }
 
   /** We need to proxy each reducer action */
@@ -156,15 +156,15 @@ export function createReducer<State, Actions extends BasicActions>({
   state,
   actions
 }: {
-  state: State,
+  state: State;
   actions: {
     [P in keyof Actions]: (state: State & { __log: boolean }, ...args: Parameters<Actions[P]>) => any;
-  }
+  };
 }): {
-  state: State,
+  state: State;
   actions: {
     [P in keyof Actions]: (...args: Parameters<Actions[P]>) => any
-  }
+  };
 } {
   return {
     state: {

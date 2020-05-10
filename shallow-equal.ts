@@ -7,16 +7,16 @@ export default function isShallowEqual(objA: any, objB: any) {
     return false;
   }
 
-  var aKeys = Object.keys(objA);
-  var bKeys = Object.keys(objB);
-  var len = aKeys.length;
+  const aKeys = Object.keys(objA);
+  const bKeys = Object.keys(objB);
+  const len = aKeys.length;
 
   if (bKeys.length !== len) {
     return false;
   }
 
-  for (var i = 0; i < len; i++) {
-    var key = aKeys[i];
+  for (let i = 0; i < len; i++) {
+    const key = aKeys[i];
 
     if (objA[key] !== objB[key]) {
       return false;
