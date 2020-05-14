@@ -9,6 +9,7 @@
     "lint:fix": "npm run lint -- --fix"
   },
   "devDependencies": {
+    "@types/lodash.clonedeep": "^4.5.6",
     "@types/react": "^16.9.19",
     "@types/react-dom": "^16.9.5",
     "@typescript-eslint/eslint-plugin": "^2.31.0",
@@ -16,6 +17,7 @@
     "eslint": "^7.0.0",
     "eslint-config-prettier": "^6.11.0",
     "eslint-plugin-prettier": "^3.1.3",
+    "eslint-plugin-react": "^7.20.0",
     "husky": "^4.2.5",
     "lint-staged": "^10.2.2",
     "parcel-bundler": "^1.12.4",
@@ -27,7 +29,7 @@
   "dependencies": {
     "deep-object-diff": "^1.1.0",
     "immer": "^5.3.2",
-    "lodash": "^4.17.15"
+    "lodash.clonedeep": "^4.5.0"
   },
   "husky": {
     "hooks": {
