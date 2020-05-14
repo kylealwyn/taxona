@@ -1,29 +1,31 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { createDraft, finishDraft } from 'immer';
+import { cloneDeep } from 'lodash';
 import shallowEqual from './shallow-equal';
 import { logStateChange } from './logger';
 
 type Store<T> = {
-  getState: () => void; 
-  updateState: (reducerName: string, state: any) => void; 
+  getState: () => void;
+  updateState: (reducerName: string, state: any) => void;
   reducers: T;
   subscribe: (fn: Function) => () => void;
   notify: () => void;
-}
+};
 
 type SubscriptionFn = (state: any) => any;
 type BasicFn = (...args: any[]) => any;
-interface BasicActions { [key: string]: BasicFn }
+interface BasicActions {
+  [key: string]: BasicFn;
+}
 
 export function createPhyla<T>(reducers: T) {
   const state: {
     [reducerName: string]: any;
   } = {};
   const subscriptions: Map<number, SubscriptionFn> = new Map();
-  let counter = 0;
+  let internalId = 0;
 
   function subscribe(fn: SubscriptionFn) {
-    const id = ++counter;
+    const id = ++internalId;
     subscriptions.set(id, fn);
 
     return () => {
@@ -36,14 +38,13 @@ export function createPhyla<T>(reducers: T) {
       fn(state);
     }
   }
-  
+
   function getState() {
-    return state;
+    return cloneDeep(state);
   }
 
   function updateState(reducerName: string, newState: any) {
     state[reducerName] = newState;
-    notify();
   }
 
   /** We need to proxy each reducer action */
@@ -51,32 +52,31 @@ export function createPhyla<T>(reducers: T) {
     // @ts-ignore
     const reducer = reducers[reducerName];
 
-    reducer.actions = Object.keys(reducer.actions).reduce((acc: BasicActions, actionName: string) => {
+    reducer.state = new Proxy(reducer.state, {
+      set: (obj, prop, value) => {
+        obj[prop] = value;
+        notify();
+        return true;
+      },
+    });
+
+    reducer.actions = Object.keys(reducer.actions).reduce((actions: BasicActions, actionName: string) => {
       const actionFn = reducer.actions[actionName];
 
-      acc[actionName] = async (payload: any) => {
+      actions[actionName] = async (...args: any[]) => {
         const groupName = `${reducerName}.${actionName}`;
-    
         const initialState = { ...getState() };
-        const draft = createDraft({ ...reducer.state, __log: true });
-        await actionFn(draft, payload);
-        const nextState = finishDraft(draft);
 
-        reducer.state = nextState;
-    
-        updateState(reducerName, nextState);
-        
-        if (nextState.__log) {
-          logStateChange(initialState, getState(), groupName);
-        }
-      }
+        await actionFn(reducer.state, ...args);
 
-      return acc;
-    }, {})
+        logStateChange(initialState, getState(), groupName);
+      };
 
-    updateState(reducerName, reducer.state);
+      return actions;
+    }, {});
+
+    state[reducerName] = reducer.state;
   });
-
 
   const contextValue = {
     getState,
@@ -84,16 +84,12 @@ export function createPhyla<T>(reducers: T) {
     updateState,
     subscribe,
     notify,
-  }
+  };
 
   const Context = createContext<Store<T>>(contextValue);
 
   const Provider: React.FC = ({ children }) => {
-    return (
-      <Context.Provider value={contextValue}>
-        {children}
-      </Context.Provider>
-    )
+    return <Context.Provider value={contextValue}>{children}</Context.Provider>;
   };
 
   function usePhyla<TSelected>(selector: (reducers: T) => TSelected, dependencies = []) {
@@ -122,10 +118,7 @@ export function createPhyla<T>(reducers: T) {
         const nextState = select();
 
         // Checking referential equality grants perf boost if selector is memoized
-        if (
-          nextState === stateRef.current ||
-          shallowEqual(nextState, stateRef.current)
-        ) {
+        if (nextState === stateRef.current || shallowEqual(nextState, stateRef.current)) {
           return;
         }
 
@@ -149,12 +142,12 @@ export function createPhyla<T>(reducers: T) {
   return {
     Provider,
     usePhyla,
-  }
+  };
 }
 
-export function createPhylum<State, Actions extends BasicActions>({
+export function createStore<State, Actions extends BasicActions>({
   state,
-  actions
+  actions,
 }: {
   state: State;
   actions: {
@@ -163,7 +156,7 @@ export function createPhylum<State, Actions extends BasicActions>({
 }): {
   state: State;
   actions: {
-    [P in keyof Actions]: (...args: Parameters<Actions[P]>) => any
+    [P in keyof Actions]: (...args: Parameters<Actions[P]>) => any;
   };
 } {
   return {
@@ -171,6 +164,6 @@ export function createPhylum<State, Actions extends BasicActions>({
       ...state,
     },
     // @ts-ignore
-    actions
-  }
+    actions,
+  };
 }

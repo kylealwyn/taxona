@@ -8,7 +8,7 @@ export default function Counter() {
     counter.actions.decrement,
   ]);
 
-  console.log('Rendering Counter')
+  console.log('Rendering Counter');
 
   return (
     <div>

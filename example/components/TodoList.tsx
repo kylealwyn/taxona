@@ -31,7 +31,7 @@ export default () => {
       </ul>
 
       <form onSubmit={onSubmit}>
-        <input value={todoInput} onChange={e => setTodoInput(e.target.value)} />
+        <input value={todoInput} onChange={(e) => setTodoInput(e.target.value)} />
         <button type="submit">Submit</button>
       </form>
     </div>

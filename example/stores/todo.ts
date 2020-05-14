@@ -1,6 +1,6 @@
-import { createPhylum } from '../../lib/phyla';
+import { createStore } from '../../lib/phyla';
 
-export default createPhylum({
+export default createStore({
   state: {
     todos: [] as Array<string>,
   },
@@ -10,15 +10,15 @@ export default createPhylum({
         return;
       }
 
-      return new Promise(resolve => {
+      return new Promise((resolve) => {
         setTimeout(() => {
-          state.todos = [...state.todos, newTodo]
+          state.todos = [...state.todos, newTodo];
           resolve();
-        })
-      })
+        });
+      });
     },
     delete: (state, index: number) => {
       state.todos.splice(index, 1);
-    }
-  }
+    },
+  },
 });

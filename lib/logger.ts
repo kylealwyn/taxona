@@ -1,7 +1,7 @@
 import { detailedDiff } from 'deep-object-diff';
 
 export const logger = (message: string, color?: string, object = {}) => {
-  const args = [`%c${message}`, `color: ${color}; font-weight: bold;\n`]
+  const args = [`%c${message}`, `color: ${color}; font-weight: bold;\n`];
   if (object && Object.keys(object).length) {
     console.log(...args, object);
   } else {
@@ -27,6 +27,6 @@ export function logStateChange(prevState: any, newState: any, groupName: string)
   }
 
   logger('Old state: ', '#555555', Object.assign({}, prevState));
-  logger('New state: ', '#555555', Object.assign({}, newState))
+  logger('New state: ', '#555555', Object.assign({}, newState));
   console.groupEnd();
 }
