@@ -7,7 +7,6 @@ export default createStore({
   },
   actions: {
     increment: (state) => {
-      state.count += 1;
       state.testObj.test = 12;
     },
     decrement: (state) => {

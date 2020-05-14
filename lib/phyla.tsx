@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { cloneDeep } from 'lodash';
+import cloneDeep from 'lodash.clonedeep';
 import shallowEqual from './shallow-equal';
 import { logStateChange } from './logger';
 
@@ -52,13 +52,22 @@ export function createPhyla<T>(reducers: T) {
     // @ts-ignore
     const reducer = reducers[reducerName];
 
-    reducer.state = new Proxy(reducer.state, {
-      set: (obj, prop, value) => {
-        obj[prop] = value;
+    const proxyValidator = {
+      get(target: any, key: string): any {
+        if (typeof target[key] === 'object' && target[key] !== null) {
+          return new Proxy(target[key], proxyValidator);
+        } else {
+          return target[key];
+        }
+      },
+      set(target: any, prop: string, value: any) {
+        target[prop] = value;
         notify();
         return true;
       },
-    });
+    };
+
+    reducer.state = new Proxy(reducer.state, proxyValidator);
 
     reducer.actions = Object.keys(reducer.actions).reduce((actions: BasicActions, actionName: string) => {
       const actionFn = reducer.actions[actionName];
@@ -88,7 +97,7 @@ export function createPhyla<T>(reducers: T) {
 
   const Context = createContext<Store<T>>(contextValue);
 
-  const Provider: React.FC = ({ children }) => {
+  const Provider: React.FunctionComponent = ({ children }) => {
     return <Context.Provider value={contextValue}>{children}</Context.Provider>;
   };
 

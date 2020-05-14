@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { usePhyla } from '../stores';
 
-export default () => {
+export default function TodoList() {
   const [todoInput, setTodoInput] = useState('');
   const [todos, addTodo, deleteTodo] = usePhyla(({ todo }) => [
     todo.state.todos,
@@ -36,4 +36,4 @@ export default () => {
       </form>
     </div>
   );
-};
+}
