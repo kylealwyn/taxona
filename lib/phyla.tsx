@@ -1,6 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import cloneDeep from 'lodash.clonedeep';
-import shallowEqual from './shallow-equal';
+import { isEqual, cloneDeep } from 'lodash';
 import { logStateChange } from './logger';
 
 type Store<T> = {
@@ -15,6 +14,29 @@ type SubscriptionFn = (state: any) => any;
 type BasicFn = (...args: any[]) => any;
 interface BasicActions {
   [key: string]: BasicFn;
+}
+
+const proxies = new WeakSet();
+function buildProxy(target: any, callback: () => any) {
+  return new Proxy(target, {
+    get(target: any, key: string): any {
+      const val = target[key];
+
+      if (typeof val === 'object' && !proxies.has(val)) {
+        const newProxy = buildProxy(val, callback);
+        proxies.add(newProxy);
+        target[key] = newProxy;
+        return newProxy;
+      }
+
+      return val;
+    },
+    set(target: any, key: string, val: any) {
+      target[key] = val;
+      setTimeout(callback);
+      return true;
+    },
+  });
 }
 
 export function createPhyla<T>(reducers: T) {
@@ -52,31 +74,17 @@ export function createPhyla<T>(reducers: T) {
     // @ts-ignore
     const reducer = reducers[reducerName];
 
-    const proxyValidator = {
-      get(target: any, key: string): any {
-        if (typeof target[key] === 'object' && target[key] !== null) {
-          return new Proxy(target[key], proxyValidator);
-        } else {
-          return target[key];
-        }
-      },
-      set(target: any, prop: string, value: any) {
-        target[prop] = value;
-        notify();
-        return true;
-      },
-    };
+    reducer.state = buildProxy(reducer.state, notify);
+    const generatedActions = reducer.actions(reducer.state);
 
-    reducer.state = new Proxy(reducer.state, proxyValidator);
+    reducer.actions = Object.keys(generatedActions).reduce((actions: BasicActions, actionName: string) => {
+      const actionFn = generatedActions[actionName];
 
-    reducer.actions = Object.keys(reducer.actions).reduce((actions: BasicActions, actionName: string) => {
-      const actionFn = reducer.actions[actionName];
-
-      actions[actionName] = async (...args: any[]) => {
+      actions[actionName] = async (...args) => {
         const groupName = `${reducerName}.${actionName}`;
         const initialState = { ...getState() };
 
-        await actionFn(reducer.state, ...args);
+        await actionFn(...args);
 
         logStateChange(initialState, getState(), groupName);
       };
@@ -127,7 +135,7 @@ export function createPhyla<T>(reducers: T) {
         const nextState = select();
 
         // Checking referential equality grants perf boost if selector is memoized
-        if (nextState === stateRef.current || shallowEqual(nextState, stateRef.current)) {
+        if (nextState === stateRef.current || isEqual(nextState, stateRef.current)) {
           return;
         }
 
@@ -154,19 +162,15 @@ export function createPhyla<T>(reducers: T) {
   };
 }
 
-export function createStore<State, Actions extends BasicActions>({
+export function createStore<State, Actions>({
   state,
   actions,
 }: {
   state: State;
-  actions: {
-    [P in keyof Actions]: (state: State & { __log: boolean }, ...args: Parameters<Actions[P]>) => any;
-  };
+  actions: (state: State) => Actions;
 }): {
   state: State;
-  actions: {
-    [P in keyof Actions]: (...args: Parameters<Actions[P]>) => any;
-  };
+  actions: Actions;
 } {
   return {
     state: {

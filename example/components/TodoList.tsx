@@ -16,8 +16,7 @@ export default function TodoList() {
   };
 
   return (
-    <div>
-      {console.log('Rendering ToDo List')}
+    <>
       <h2>ToDo List</h2>
 
       <ul>
@@ -34,6 +33,6 @@ export default function TodoList() {
         <input value={todoInput} onChange={(e) => setTodoInput(e.target.value)} />
         <button type="submit">Submit</button>
       </form>
-    </div>
+    </>
   );
 }

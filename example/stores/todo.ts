@@ -4,21 +4,21 @@ export default createStore({
   state: {
     todos: [] as Array<string>,
   },
-  actions: {
-    add: (state, newTodo: string) => {
-      if (!newTodo) {
-        return;
-      }
-
+  actions: (state) => ({
+    add: (newTodo: string) => {
       return new Promise((resolve) => {
+        if (!newTodo) {
+          return resolve();
+        }
+
         setTimeout(() => {
           state.todos = [...state.todos, newTodo];
           resolve();
         });
       });
     },
-    delete: (state, index: number) => {
-      state.todos.splice(index, 1);
+    delete: (index: number) => {
+      state.todos = state.todos.filter((_: string, i: number) => i !== index);
     },
-  },
+  }),
 });

@@ -8,14 +8,12 @@ export default function Counter() {
     counter.actions.decrement,
   ]);
 
-  console.log('Rendering Counter');
-
   return (
-    <div>
+    <>
       <h2>Counter</h2>
       <button onClick={() => decrement()}>-</button>
       {count}
       <button onClick={() => increment()}>+</button>
-    </div>
+    </>
   );
 }

@@ -3,14 +3,13 @@ import { createStore } from '../../lib/phyla';
 export default createStore({
   state: {
     count: 0,
-    testObj: {} as { test: number },
   },
-  actions: {
-    increment: (state) => {
-      state.testObj.test = 12;
+  actions: (state) => ({
+    increment: () => {
+      state.count += 1;
     },
-    decrement: (state) => {
+    decrement: () => {
       state.count -= 1;
     },
-  },
+  }),
 });
